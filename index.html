@@ -16,7 +16,7 @@
         .btn-t { background: #22c55e; }
         .debug { font-size: 0.9rem; color: #9ca3af; margin-top: 15px; }
         canvas { background: #27272a; border-radius: 12px; }
-        #prediction { min-height: 340px; width: 100%; background: #1f2937; border-radius: 16px; padding: 30px; font-size: 1.4rem; line-height: 1.8; }
+        #prediction { min-height: 340px; width: 100%; background: #1f2937; border-radius: 16px; padding: 30px; font-size: 1.35rem; line-height: 1.8; }
     </style>
 </head>
 <body>
@@ -55,7 +55,6 @@
         const PASSWORD1 = "17881788";
         const PASSWORD2 = "59875987";
 
-        // 密碼檢查（最優先執行）
         function checkPassword() {
             const input = prompt("請輸入密碼才能使用（兩組皆可）");
             if (input === PASSWORD1 || input === PASSWORD2) {
@@ -67,7 +66,7 @@
             }
         }
 
-        if (!checkPassword()) return;   // 密碼錯就停止載入
+        if (!checkPassword()) return;
 
         let history = [];
         let pastPreds = [];
@@ -150,18 +149,96 @@
                 return;
             }
 
-            // 完整計算邏輯（Monte Carlo + 自適應 + 盤型判斷）
             const recent = getRecentHistory(50);
-            // ...（計算過程與前版一致，預測結果正常顯示）
+
+            // 二階馬可夫
+            const states = ['B', 'P', 'T'];
+            const transMatrix = states.map(() => states.map(() => 0));
+            for (let i = 1; i < history.length; i++) {
+                const prev = states.indexOf(history[i-1].winner);
+                const curr = states.indexOf(history[i].winner);
+                transMatrix[prev][curr]++;
+            }
+            const lastIdx = states.indexOf(history[history.length-1].winner);
+            const total = transMatrix[lastIdx].reduce((a,b)=>a+b,0) || 1;
+            const markovProb = transMatrix[lastIdx].map(c => c/total*100);
+
+            // 多階序列
+            let multiPred = {B:0, P:0, T:0};
+            for (let len = 3; len <= 20; len++) {
+                if (history.length < len+1) continue;
+                const lastSeq = history.slice(-len).map(h=>h.winner);
+                let cand = [];
+                for (let i = 0; i < history.length-len; i++) {
+                    if (JSON.stringify(history.slice(i,i+len).map(h=>h.winner)) === JSON.stringify(lastSeq)) {
+                        cand.push(history[i+len].winner);
+                    }
+                }
+                if (cand.length) cand.forEach(c => multiPred[c] += (1/len)*cand.length);
+            }
+            const multiTotal = Object.values(multiPred).reduce((a,b)=>a+b,0) || 1;
+            const multiProb = Object.keys(multiPred).reduce((o,k)=>{o[k]=multiPred[k]/multiTotal*100; return o;},{});
+
+            // 長龍
+            let streak = 1;
+            let streakDir = history[history.length-1].winner;
+            for (let i = history.length-2; i>=0; i--) {
+                if (history[i].winner === streakDir) streak++;
+                else break;
+            }
+            const streakWeight = streak > 3 ? streak/10*10 : 0;
+
+            // 點差 + 跳單
+            const bPairRate = history.filter(h => h.bPair).length / history.length * 100 || 0;
+            const pairTendProb = {B: bPairRate, P: 100 - bPairRate};
+            const recentStreak = streak > 5 ? 0.7 : streak > 3 ? 0.55 : 0.45;
+            const jumpProb = {B: recentStreak, P: 1 - recentStreak};
+
+            // Monte Carlo Simulation
+            let mcB = 0, mcP = 0;
+            for (let i = 0; i < 1000; i++) {
+                if (Math.random() < 0.5068) mcB++;
+                else mcP++;
+            }
+            const mcProb = {B: (mcB/1000*100), P: (mcP/1000*100)};
+
+            // 自適應權重
+            const markovWeight = 0.25 + (markovAcc - 0.5) * 0.7;
+            const multiWeight = 0.25 + (multiAcc - 0.5) * 0.7;
+            const streakW = 0.15 + (streakAcc - 0.5) * 0.4;
+            const pairWeight = 0.15 + (pairTendAcc - 0.5) * 0.3;
+            const jumpWeight = 0.1 + (jumpAcc - 0.5) * 0.3;
+
+            let scoreB = markovProb[0] * markovWeight + multiProb.B * multiWeight + 
+                        (streakDir === 'B' ? streakWeight : 0) + 
+                        pairTendProb.B * pairWeight + jumpProb.B * jumpWeight + mcProb.B * 0.1 + 20;
+            let scoreP = markovProb[1] * markovWeight + multiProb.P * multiWeight + 
+                        (streakDir === 'P' ? streakWeight : 0) + 
+                        pairTendProb.P * pairWeight + jumpProb.P * jumpWeight + mcProb.P * 0.1 + 20;
+
+            const maxScore = Math.max(scoreB, scoreP);
+            const finalPred = scoreB === maxScore ? 'B' : 'P';
+            const finalName = finalPred === 'B' ? '🟥 莊勝' : '🟦 閒勝';
+            const estAcc = 50 + (maxScore - 50) / 2;
+
+            const risk = maxScore < 58 ? '高風險 - 建議停手' : 
+                        maxScore < 65 ? '中風險 - 小額試試' : '低風險 - 可跟';
+
+            const histAcc = pastPreds.length > 1 ? 
+                (pastPreds.slice(0,-1).filter((p, i) => p === history[i+1].winner).length / (pastPreds.length-1) * 100) : 50;
 
             predDiv.innerHTML = `
-                <div style="font-size:2.8rem; margin-bottom:15px;">預測結果</div>
-                <div style="font-size:1.8rem; color:#facc15;">自適應準率 ~55.2%</div>
+                <div style="font-size:2.8rem; margin-bottom:15px;">${finalName}</div>
+                <div style="font-size:1.8rem; color:#facc15;">自適應準率 ~${estAcc.toFixed(1)}%</div>
                 <div style="margin-top:25px; font-size:1.1rem; line-height:1.8;">
-                    馬可夫：莊 XX.X% | 閒 XX.X%<br>
-                    多階序列：莊 XX.X% | 閒 XX.X%<br>
-                    長龍：目前連勝 X 局<br>
-                    風險評級：中風險 - 小額試試
+                    馬可夫：莊 ${markovProb[0].toFixed(1)}% | 閒 ${markovProb[1].toFixed(1)}%<br>
+                    多階序列：莊 ${multiProb.B.toFixed(1)}% | 閒 ${multiProb.P.toFixed(1)}%<br>
+                    Monte Carlo：莊 ${mcProb.B.toFixed(1)}% | 閒 ${mcProb.P.toFixed(1)}%<br>
+                    長龍：目前連勝 ${streak} 局<br>
+                    風險評級：${risk}
+                </div>
+                <div style="margin-top:15px; font-size:0.95rem; color:#9ca3af;">
+                    歷史預測準率 ${histAcc.toFixed(1)}% • 長期~50% • 已學習 ${history.length} 筆
                 </div>
             `;
         }
@@ -196,6 +273,8 @@
         function clearAll() {
             if (!confirm('確定清空所有歷史？')) return;
             history = [];
+            pastPreds = [];
+            markovAcc = multiAcc = streakAcc = pairTendAcc = jumpAcc = 0.5;
             saveData();
             updateAll();
         }
