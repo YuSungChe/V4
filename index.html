@@ -14,68 +14,56 @@
         .btn-b { background: #ef4444; }
         .btn-p { background: #3b82f6; }
         .btn-t { background: #22c55e; }
+        #unlockBtn { background: #eab308; color: #111827; font-size: 1.4rem; }
         .debug { font-size: 0.9rem; color: #9ca3af; margin-top: 15px; }
         canvas { background: #27272a; border-radius: 12px; }
-        #prediction { 
-            min-height: 380px; 
-            width: 100%; 
-            background: #1f2937; 
-            border-radius: 16px; 
-            padding: 35px; 
-            font-size: 1.4rem; 
-            line-height: 1.9; 
-            margin-top: 15px;
-        }
+        #prediction { min-height: 380px; width: 100%; background: #1f2937; border-radius: 16px; padding: 35px; font-size: 1.4rem; line-height: 1.9; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>百家樂趨勢分析V4</h1>
         
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-            <div class="card">
-                <h2 style="margin-bottom:15px;">點擊直接新增開牌</h2>
-                <button id="btnB" class="btn-b">莊</button>
-                <button id="btnP" class="btn-p">閒</button>
-                <button id="btnT" class="btn-t">和</button>
+        <!-- 解鎖按鈕 -->
+        <div id="lockScreen" class="card" style="text-align:center;">
+            <h2>程式已鎖定</h2>
+            <button id="unlockBtn">🔓 輸入密碼解鎖</button>
+        </div>
 
-                <div style="margin-top:25px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <button id="btnUndo" style="background:#4b5563;">↩ 刪除上一筆</button>
-                    <button id="btnClear" style="background:#f59e0b;">🗑 清空全部</button>
+        <!-- 主內容（預設隱藏） -->
+        <div id="mainContent" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                <div class="card">
+                    <h2 style="margin-bottom:15px;">點擊直接新增開牌</h2>
+                    <button id="btnB" class="btn-b">莊</button>
+                    <button id="btnP" class="btn-p">閒</button>
+                    <button id="btnT" class="btn-t">和</button>
+
+                    <div style="margin-top:25px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <button id="btnUndo" style="background:#4b5563;">↩ 刪除上一筆</button>
+                        <button id="btnClear" style="background:#f59e0b;">🗑 清空全部</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>開牌歷史</h2>
+                    <div id="historyList" style="background:#111827; padding:15px; height:220px; overflow-y:auto; border-radius:12px; margin-bottom:20px; font-family:monospace;"></div>
+                    <h2>大路路單</h2>
+                    <canvas id="bigRoad" width="720" height="300"></canvas>
                 </div>
             </div>
 
             <div class="card">
-                <h2>開牌歷史</h2>
-                <div id="historyList" style="background:#111827; padding:15px; height:220px; overflow-y:auto; border-radius:12px; margin-bottom:20px; font-family:monospace;"></div>
-                <h2>大路路單</h2>
-                <canvas id="bigRoad" width="720" height="300"></canvas>
+                <h2>🔮 自適應 AI 預測（20筆以上）</h2>
+                <div id="prediction"></div>
+                <div id="debug" class="debug"></div>
             </div>
-        </div>
-
-        <div class="card">
-            <h2>🔮 自適應 AI 預測（20筆以上）</h2>
-            <div id="prediction"></div>
-            <div id="debug" class="debug"></div>
         </div>
     </div>
 
     <script>
         const PASSWORD1 = "17881788";
         const PASSWORD2 = "59875987";
-
-        function checkPassword() {
-            const input = prompt("請輸入密碼才能使用（兩組皆可）");
-            if (input === PASSWORD1 || input === PASSWORD2) {
-                return true;
-            } else {
-                alert("密碼錯誤！請重新載入");
-                location.reload();
-                return false;
-            }
-        }
-
-        if (!checkPassword()) return;
 
         let history = [];
         let pastPreds = [];
@@ -96,6 +84,17 @@
         }
         function saveData() { 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        }
+
+        function unlockApp() {
+            const input = prompt("請輸入密碼解鎖（兩組皆可）");
+            if (input === PASSWORD1 || input === PASSWORD2) {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                updateAll();
+            } else {
+                alert("密碼錯誤！");
+            }
         }
 
         function updateHistoryList() {
@@ -160,7 +159,7 @@
 
             const recent = getRecentHistory(50);
 
-            // 二階馬可夫
+            // 二階馬可夫、多階序列、長龍、點差、跳單、Monte Carlo（完整計算）
             const states = ['B', 'P', 'T'];
             const transMatrix = states.map(() => states.map(() => 0));
             for (let i = 1; i < history.length; i++) {
@@ -172,7 +171,6 @@
             const total = transMatrix[lastIdx].reduce((a,b)=>a+b,0) || 1;
             const markovProb = transMatrix[lastIdx].map(c => c/total*100);
 
-            // 多階序列
             let multiPred = {B:0, P:0, T:0};
             for (let len = 3; len <= 20; len++) {
                 if (history.length < len+1) continue;
@@ -188,7 +186,6 @@
             const multiTotal = Object.values(multiPred).reduce((a,b)=>a+b,0) || 1;
             const multiProb = Object.keys(multiPred).reduce((o,k)=>{o[k]=multiPred[k]/multiTotal*100; return o;},{});
 
-            // 長龍
             let streak = 1;
             let streakDir = history[history.length-1].winner;
             for (let i = history.length-2; i>=0; i--) {
@@ -197,13 +194,12 @@
             }
             const streakWeight = streak > 3 ? streak/10*10 : 0;
 
-            // 點差 + 跳單
             const bPairRate = history.filter(h => h.bPair).length / history.length * 100 || 0;
             const pairTendProb = {B: bPairRate, P: 100 - bPairRate};
+
             const recentStreak = streak > 5 ? 0.7 : streak > 3 ? 0.55 : 0.45;
             const jumpProb = {B: recentStreak, P: 1 - recentStreak};
 
-            // Monte Carlo Simulation
             let mcB = 0, mcP = 0;
             for (let i = 0; i < 1000; i++) {
                 if (Math.random() < 0.5068) mcB++;
@@ -211,7 +207,6 @@
             }
             const mcProb = {B: (mcB/1000*100), P: (mcP/1000*100)};
 
-            // 自適應權重
             const markovWeight = 0.25 + (markovAcc - 0.5) * 0.7;
             const multiWeight = 0.25 + (multiAcc - 0.5) * 0.7;
             const streakW = 0.15 + (streakAcc - 0.5) * 0.4;
@@ -233,9 +228,6 @@
             const risk = maxScore < 58 ? '高風險 - 建議停手' : 
                         maxScore < 65 ? '中風險 - 小額試試' : '低風險 - 可跟';
 
-            const histAcc = pastPreds.length > 1 ? 
-                (pastPreds.slice(0,-1).filter((p, i) => p === history[i+1].winner).length / (pastPreds.length-1) * 100) : 50;
-
             predDiv.innerHTML = `
                 <div style="font-size:2.8rem; margin-bottom:15px;">${finalName}</div>
                 <div style="font-size:1.8rem; color:#facc15;">自適應準率 ~${estAcc.toFixed(1)}%</div>
@@ -245,9 +237,6 @@
                     Monte Carlo：莊 ${mcProb.B.toFixed(1)}% | 閒 ${mcProb.P.toFixed(1)}%<br>
                     長龍：目前連勝 ${streak} 局<br>
                     風險評級：${risk}
-                </div>
-                <div style="margin-top:15px; font-size:0.95rem; color:#9ca3af;">
-                    歷史預測準率 ${histAcc.toFixed(1)}% • 長期~50% • 已學習 ${history.length} 筆
                 </div>
             `;
         }
@@ -282,12 +271,11 @@
         function clearAll() {
             if (!confirm('確定清空所有歷史？')) return;
             history = [];
-            pastPreds = [];
-            markovAcc = multiAcc = streakAcc = pairTendAcc = jumpAcc = 0.5;
             saveData();
             updateAll();
         }
 
+        // 初始化
         loadData();
         initButtons();
         updateAll();
