@@ -1,7 +1,7 @@
 {
   "name": "百家樂趨勢分析V4",
   "short_name": "百家樂V4",
-  "description": "最先進的百家樂趨勢分析工具，5種自適應模型 + Monte Carlo 模擬，即時學習，支援完全離線使用。",
+  "description": "最先進的百家樂趨勢分析工具，支援離線使用與密碼保護。",
   "id": "/V4/",
   "scope": "/",
   "start_url": "index.html",
