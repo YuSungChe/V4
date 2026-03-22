@@ -14,7 +14,7 @@
         .btn-b { background: #ef4444; }
         .btn-p { background: #3b82f6; }
         .btn-t { background: #22c55e; }
-        #unlockBtn { background: #eab308; color: #111827; font-size: 1.4rem; }
+        #unlockBtn { background: #eab308; color: #111827; font-size: 1.6rem; font-weight: bold; }
         .debug { font-size: 0.9rem; color: #9ca3af; margin-top: 15px; }
         canvas { background: #27272a; border-radius: 12px; }
         #prediction { min-height: 380px; width: 100%; background: #1f2937; border-radius: 16px; padding: 35px; font-size: 1.4rem; line-height: 1.9; }
@@ -24,9 +24,10 @@
     <div class="container">
         <h1>百家樂趨勢分析V4</h1>
         
-        <!-- 解鎖按鈕 -->
-        <div id="lockScreen" class="card" style="text-align:center;">
+        <!-- 解鎖畫面 -->
+        <div id="lockScreen" class="card" style="text-align:center; padding:40px;">
             <h2>程式已鎖定</h2>
+            <p style="margin:20px 0;">點擊下方按鈕輸入密碼後才能使用</p>
             <button id="unlockBtn">🔓 輸入密碼解鎖</button>
         </div>
 
@@ -159,7 +160,7 @@
 
             const recent = getRecentHistory(50);
 
-            // 二階馬可夫、多階序列、長龍、點差、跳單、Monte Carlo（完整計算）
+            // 二階馬可夫
             const states = ['B', 'P', 'T'];
             const transMatrix = states.map(() => states.map(() => 0));
             for (let i = 1; i < history.length; i++) {
@@ -171,6 +172,7 @@
             const total = transMatrix[lastIdx].reduce((a,b)=>a+b,0) || 1;
             const markovProb = transMatrix[lastIdx].map(c => c/total*100);
 
+            // 多階序列
             let multiPred = {B:0, P:0, T:0};
             for (let len = 3; len <= 20; len++) {
                 if (history.length < len+1) continue;
@@ -186,6 +188,7 @@
             const multiTotal = Object.values(multiPred).reduce((a,b)=>a+b,0) || 1;
             const multiProb = Object.keys(multiPred).reduce((o,k)=>{o[k]=multiPred[k]/multiTotal*100; return o;},{});
 
+            // 長龍
             let streak = 1;
             let streakDir = history[history.length-1].winner;
             for (let i = history.length-2; i>=0; i--) {
@@ -194,12 +197,13 @@
             }
             const streakWeight = streak > 3 ? streak/10*10 : 0;
 
+            // 點差 + 跳單
             const bPairRate = history.filter(h => h.bPair).length / history.length * 100 || 0;
             const pairTendProb = {B: bPairRate, P: 100 - bPairRate};
-
             const recentStreak = streak > 5 ? 0.7 : streak > 3 ? 0.55 : 0.45;
             const jumpProb = {B: recentStreak, P: 1 - recentStreak};
 
+            // Monte Carlo
             let mcB = 0, mcP = 0;
             for (let i = 0; i < 1000; i++) {
                 if (Math.random() < 0.5068) mcB++;
@@ -207,6 +211,7 @@
             }
             const mcProb = {B: (mcB/1000*100), P: (mcP/1000*100)};
 
+            // 自適應權重
             const markovWeight = 0.25 + (markovAcc - 0.5) * 0.7;
             const multiWeight = 0.25 + (multiAcc - 0.5) * 0.7;
             const streakW = 0.15 + (streakAcc - 0.5) * 0.4;
@@ -248,6 +253,7 @@
         }
 
         function initButtons() {
+            document.getElementById('unlockBtn').addEventListener('click', unlockApp);
             document.getElementById('btnB').addEventListener('click', () => addHand('B'));
             document.getElementById('btnP').addEventListener('click', () => addHand('P'));
             document.getElementById('btnT').addEventListener('click', () => addHand('T'));
@@ -275,10 +281,8 @@
             updateAll();
         }
 
-        // 初始化
         loadData();
         initButtons();
-        updateAll();
     </script>
 </body>
 </html>
