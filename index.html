@@ -16,12 +16,38 @@
     --red:#e03030;--blue:#2b72e8;--green:#18a84a;
     --text:#dde4f0;--muted:#5a6a85;--r:10px;
   }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;}
-  html,body{width:100%;background:var(--bg);color:var(--text);overflow:hidden;
-    font-family:-apple-system,'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;font-size:14px;}
+  *{box-sizing:border-box;margin:0;padding:0;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;}
 
-#app{display:flex;flex-direction:column;width:100%;overflow:hidden;}
+html{
+width:100%;height:100%;
+background:var(–bg);
+overflow:hidden;
+}
+body{
+width:100%;height:100%;
+background:var(–bg);
+color:var(–text);
+overflow:hidden;
+font-family:-apple-system,‘Helvetica Neue’,‘PingFang TC’,‘Microsoft JhengHei’,sans-serif;
+font-size:14px;
+/* iOS standalone 模式下防止彈跳 */
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+}
 
+/* ── App 容器：由 JS 精確設定高度 ── */
+#app{
+display:flex;
+flex-direction:column;
+width:100%;
+/* height 由 JS 注入 */
+overflow:hidden;
+}
+
+/* 頂部 */
 #topbar{flex:0 0 auto;background:linear-gradient(90deg,#0d1526,#16243e,#0d1526);
 border-bottom:1px solid var(–border);display:flex;align-items:center;
 justify-content:space-between;padding:8px 12px;gap:8px;}
@@ -30,9 +56,11 @@ justify-content:space-between;padding:8px 12px;gap:8px;}
 #netBadge{font-size:.55rem;padding:2px 7px;border-radius:20px;
 background:#16a34a18;border:1px solid #16a34a55;color:#4ade80;white-space:nowrap;}
 
+/* 主體 */
 #main{flex:1 1 0;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:6px 8px;gap:6px;}
 #row1{display:flex;gap:6px;flex:0 0 auto;}
 
+/* 左欄 */
 #colLeft{display:flex;flex-direction:column;gap:5px;flex:0 0 auto;width:96px;}
 .bet-btn{border:none;border-radius:8px;font-size:1.05rem;font-weight:900;letter-spacing:2px;
 cursor:pointer;padding:9px 0;transition:transform .1s,opacity .1s;color:white;}
@@ -51,6 +79,7 @@ cursor:pointer;transition:transform .1s;letter-spacing:.5px;}
 .stat-mini .sv{font-size:.8rem;font-weight:900;}
 .stat-mini .sk{font-size:.48rem;color:var(–muted);}
 
+/* 右欄 */
 #colRight{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px;}
 #historyBox{background:#0a0e1a;border:1px solid var(–border);border-radius:var(–r);
 padding:4px 8px;overflow-y:auto;font-size:.68rem;line-height:1.6;color:var(–muted);
@@ -60,6 +89,7 @@ font-family:‘Courier New’,monospace;flex:0 0 58px;}
 #roadCanvas{background:#0a0e1a;border:1px solid var(–border);border-radius:var(–r);
 width:100%;flex:1 1 0;min-height:0;display:block;}
 
+/* 預測區 */
 #row2{flex:1 1 0;min-height:0;background:var(–card);border:1px solid var(–border);
 border-radius:var(–r);overflow:hidden;display:flex;flex-direction:column;}
 #predHeader{display:flex;align-items:center;justify-content:space-between;
@@ -103,35 +133,52 @@ display:flex;align-items:center;justify-content:center;}
 .hy{background:rgba(34,197,94,.18);color:#4ade80;}
 .hn{background:rgba(239,68,68,.14);color:#f87171;}
 
-/* ── 解鎖疊層 ── */
-#lockOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#0a0e1a;
-z-index:99998;display:flex;flex-direction:column;align-items:center;justify-content:center;
-gap:12px;text-align:center;padding:30px;}
+/* ── 疊層（解鎖 / 確認）共用基底 ── */
+.overlay{
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+display:none;
+align-items:center;
+justify-content:center;
+padding:20px;
+}
+
+/* 解鎖疊層 */
+#lockOverlay{
+background:#0a0e1a;
+z-index:9000;
+flex-direction:column;
+text-align:center;
+gap:12px;
+}
 #lockOverlay .lk-icon{font-size:2.8rem;}
 #lockOverlay h2{font-size:1.2rem;color:var(–gold);font-weight:800;}
 #lockOverlay p{font-size:.8rem;color:var(–muted);}
 #unlockBtn{background:linear-gradient(135deg,var(–gold2),var(–gold));color:#0a0e1a;
 border:none;padding:13px 36px;border-radius:10px;font-size:1rem;font-weight:900;
-cursor:pointer;box-shadow:0 4px 18px rgba(245,197,24,.3);transition:transform .15s;}
-#unlockBtn:active{transform:scale(.95);}
+cursor:pointer;box-shadow:0 4px 18px rgba(245,197,24,.3);}
+#unlockBtn:active{opacity:.85;}
 #pwArea{display:none;flex-direction:column;align-items:center;gap:10px;}
 #pwInput{width:220px;padding:12px;background:#0d1526;border:2px solid var(–gold2);
 border-radius:8px;color:white;font-size:1.1rem;text-align:center;letter-spacing:5px;outline:none;}
 #pwInput:focus{border-color:var(–gold);}
 #pwOkBtn{background:#16a34a;color:white;border:none;padding:11px 30px;border-radius:8px;
 font-size:.9rem;font-weight:700;cursor:pointer;}
-#pwOkBtn:active{transform:scale(.95);}
-#pwErr{color:#f87171;font-size:.8rem;min-height:1rem;}
+#pwOkBtn:active{opacity:.85;}
+#pwErr{color:#f87171;font-size:.8rem;min-height:1rem;text-align:center;}
 
-/* ── 確認對話框（最高層）── */
+/* 限時密碼倒數 */
+#timerBar{display:none;align-items:center;gap:8px;
+background:#1a2235;border:1px solid var(–border);border-radius:8px;
+padding:6px 12px;font-size:.65rem;color:var(–muted);margin-top:4px;}
+#timerBar.warn{border-color:#f59e0b55;color:#fbbf24;}
+#timerBar.danger{border-color:#ef444455;color:#f87171;}
+#timerTxt{font-weight:700;font-size:.75rem;min-width:36px;}
+
+/* 確認清空疊層 */
 #confirmOverlay{
-position:fixed;top:0;left:0;right:0;bottom:0;
-background:rgba(0,0,0,.8);
-z-index:99999;          /* 最高，蓋過所有東西 */
-display:none;
-align-items:center;
-justify-content:center;
-padding:20px;
+background:rgba(0,0,0,.82);
+z-index:9999;
 }
 #confirmBox{background:#1a2235;border:1px solid var(–border);border-radius:14px;
 padding:24px 20px;text-align:center;max-width:280px;width:100%;}
@@ -149,7 +196,7 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
 
 <!-- ① 解鎖疊層 -->
 
-<div id="lockOverlay">
+<div id="lockOverlay" class="overlay" style="display:flex;">
   <div class="lk-icon">🔐</div>
   <h2>百家樂趨勢分析 V6</h2>
   <p>請輸入密碼以解鎖使用</p>
@@ -169,7 +216,10 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
       <div class="title">🎴 百家樂趨勢分析</div>
       <div class="ver">V6 · AI ADAPTIVE ENGINE</div>
     </div>
-    <div id="netBadge">● 載入中</div>
+    <div id="topRight" style="display:flex;align-items:center;gap:6px;">
+      <div id="timerBar">⏱ <span id="timerTxt">15:00</span></div>
+      <div id="netBadge">● 載入中</div>
+    </div>
   </div>
   <div id="main">
     <div id="row1">
@@ -234,9 +284,9 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
   </div>
 </div>
 
-<!-- ③ 確認清空（在 body 最末，z-index 最高，永遠蓋在最上層）-->
+<!-- ③ 確認清空（body 最末，z-index 最高）-->
 
-<div id="confirmOverlay">
+<div id="confirmOverlay" class="overlay">
   <div id="confirmBox">
     <h3>⚠️ 確認清空</h3>
     <p>將清空所有開牌歷史及 AI 學習紀錄，此操作無法復原。</p>
@@ -248,10 +298,12 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
 </div>
 
 <script>
-/* ── Service Worker ── */
+/* ════════════════════════════════════════════
+   Service Worker（Blob，HTTPS 離線支援）
+════════════════════════════════════════════ */
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const c=`const CV='b6v2';self.addEventListener('install',e=>{e.waitUntil(caches.open(CV).then(c=>c.addAll([location.href])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CV).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(location.href))));});`;
+  const c=`const CV='b6v3';self.addEventListener('install',e=>{e.waitUntil(caches.open(CV).then(c=>c.addAll([location.href])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CV).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(location.href))));});`;
   try{
     navigator.serviceWorker.register(URL.createObjectURL(new Blob([c],{type:'application/javascript'})))
       .then(()=>{const b=document.getElementById('netBadge');b.textContent='● 離線就緒';b.style.color='#4ade80';})
@@ -261,8 +313,67 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
   window.addEventListener('online', ()=>{document.getElementById('netBadge').textContent='● 已連線';});
 })();
 
-/* ── 資料 ── */
-const P1='17881788',P2='59875987';
+/* ════════════════════════════════════════════
+   密碼 & 限時邏輯
+════════════════════════════════════════════ */
+const P1='17881788', P2='59875987', P3='12341234';
+const TEMP_DURATION = 15 * 60 * 1000; // 15 分鐘
+const TEMP_KEY      = 'b6_temp_exp';   // 到期時間戳
+const TEMP_LOCK_KEY = 'b6_temp_lock';  // 鎖定旗標
+
+let timerInterval = null;
+
+/* 檢查限時密碼是否仍可用 */
+function isTempBlocked(){
+  return localStorage.getItem(TEMP_LOCK_KEY) === '1';
+}
+function getTempExpiry(){
+  const v = localStorage.getItem(TEMP_KEY);
+  return v ? parseInt(v) : null;
+}
+function isTempActive(){
+  const exp = getTempExpiry();
+  return exp && Date.now() < exp;
+}
+
+/* 啟動限時倒數 */
+function startTimer(){
+  const bar = document.getElementById('timerBar');
+  const txt = document.getElementById('timerTxt');
+  bar.style.display = 'flex';
+
+  function tick(){
+    const exp = getTempExpiry();
+    if(!exp){ clearInterval(timerInterval); return; }
+    const left = Math.max(0, exp - Date.now());
+    const m = Math.floor(left/60000);
+    const s = Math.floor((left%60000)/1000);
+    txt.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+    if(left <= 60000){bar.className='timerBar danger';}
+    else if(left <= 3*60000){bar.className='timerBar warn';}
+
+    if(left <= 0){
+      clearInterval(timerInterval);
+      // 鎖定裝置
+      localStorage.setItem(TEMP_LOCK_KEY,'1');
+      localStorage.removeItem(TEMP_KEY);
+      // 強制回到解鎖畫面
+      document.getElementById('lockOverlay').style.display='flex';
+      document.getElementById('pwErr').textContent='⏰ 限時密碼已過期，此裝置已鎖定。';
+      document.getElementById('pwArea').style.display='flex';
+      document.getElementById('pwInput').value='';
+      document.getElementById('pwInput').disabled=true;
+      document.getElementById('pwOkBtn').disabled=true;
+    }
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+/* ════════════════════════════════════════════
+   資料 & 模型
+════════════════════════════════════════════ */
 const SK='b6h',WK='b6w',PLK='b6p';
 let history=[],predLog=[];
 let W={_a:1,_b:1,_c:1,_d:1,_e:1,_f:1,_g:1};
@@ -286,13 +397,8 @@ function mF(){const nonT=history.filter(h=>h.winner!=='T');if(nonT.length<10)ret
 function mG(){const win=history.slice(-20);if(win.length<6)return{B:50,P:50};let votes={B:0,P:0};for(let len=2;len<=4;len++){const pat=JSON.stringify(win.slice(-len).map(h=>h.winner));let freq=0,bV=0,pV=0;for(let i=0;i<=win.length-len-1;i++)if(JSON.stringify(win.slice(i,i+len).map(h=>h.winner))===pat){freq++;const nx=win[i+len].winner;if(nx==='B')bV++;if(nx==='P')pV++;}if(freq>=2){votes.B+=bV*freq*len;votes.P+=pV*freq*len;}}const tot=votes.B+votes.P||1;return{B:votes.B/tot*100,P:votes.P/tot*100};}
 const MK=['_a','_b','_c','_d','_e','_f','_g'],MF=[mA,mB,mC,mD,mE,mF,mG];
 
-/* ── 學習 ── */
 function learn(actual){if(!predLog.length)return;const last=predLog[predLog.length-1];if(last.actual!==null)return;last.actual=actual;last.correct=(last.pred===actual);last.index=history.length-1;MK.forEach((k,i)=>{const v=last.votes[i];if(!v)return;W[k]=clamp(v===actual?W[k]+LR:W[k]-LR);});saveW();saveP();}
-
-/* ── 統計 ── */
 function updateStats(){document.getElementById('stB').textContent=history.filter(h=>h.winner==='B').length;document.getElementById('stP').textContent=history.filter(h=>h.winner==='P').length;document.getElementById('stT').textContent=history.filter(h=>h.winner==='T').length;}
-
-/* ── 歷史 ── */
 function updateHistory(){
   const el=document.getElementById('historyBox');el.innerHTML='';
   if(!history.length){el.innerHTML='<span style="color:var(--muted)">尚無記錄</span>';return;}
@@ -308,8 +414,6 @@ function updateHistory(){
   });
   el.scrollTop=el.scrollHeight;
 }
-
-/* ── 路單 ── */
 function drawRoad(){
   const canvas=document.getElementById('roadCanvas');
   const rect=canvas.getBoundingClientRect();
@@ -343,16 +447,9 @@ function drawRoad(){
     });
   });
 }
-
-/* ── 預測 ── */
 function showPrediction(){
   const wb=document.getElementById('waitBox'),rb=document.getElementById('resultBox');
-  if(history.length<20){
-    wb.style.display='block';rb.style.display='none';
-    document.getElementById('waitNum').textContent=history.length;
-    document.getElementById('progFill').style.width=(history.length/20*100)+'%';
-    document.getElementById('hdrCount').textContent='';document.getElementById('hdrStreak').textContent='';return;
-  }
+  if(history.length<20){wb.style.display='block';rb.style.display='none';document.getElementById('waitNum').textContent=history.length;document.getElementById('progFill').style.width=(history.length/20*100)+'%';document.getElementById('hdrCount').textContent='';document.getElementById('hdrStreak').textContent='';return;}
   wb.style.display='none';rb.style.display='flex';
   const results=MF.map(fn=>fn()),votes=results.map(r=>r.B>=r.P?'B':'P');
   let sB=0,sP=0;results.forEach((r,i)=>{const w=W[MK[i]];sB+=r.B*w;sP+=r.P*w;});
@@ -375,40 +472,68 @@ function showPrediction(){
   document.getElementById('hdrStreak').textContent=streak>0?`連${streakDir==='B'?'莊':'閒'} ${streak}局`:'';
   document.getElementById('hdrCount').textContent=judged.length>0?`命中率 ${acc}%`:'';
 }
-
 function updateAll(){updateStats();updateHistory();drawRoad();showPrediction();}
 function addHand(w){if(w!=='T')learn(w);history.push({winner:w});saveH();updateAll();}
 function undoLast(){if(!history.length)return;history.pop();if(predLog.length&&predLog[predLog.length-1].actual===null)predLog.pop();saveH();saveP();updateAll();}
 function clearAll(){document.getElementById('confirmOverlay').style.display='flex';}
 
-/* ── DOMContentLoaded ── */
+/* ════════════════════════════════════════════
+   DOMContentLoaded
+════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded',function(){
 
-  /* 精確高度 */
+  /* ── iOS 精確高度（核心修正）── */
   function setH(){
-    const h=window.innerHeight;
-    document.getElementById('app').style.height=h+'px';
-    document.documentElement.style.height=h+'px';
-    document.body.style.height=h+'px';
+    const h = window.innerHeight;
+    document.getElementById('app').style.height = h + 'px';
+    document.body.style.height = h + 'px';
+    document.documentElement.style.height = h + 'px';
   }
   setH();
-  window.addEventListener('resize',setH);
-  window.addEventListener('orientationchange',function(){setTimeout(setH,300);});
+  window.addEventListener('resize', setH);
+  window.addEventListener('orientationchange', function(){ setTimeout(setH, 300); });
 
-  /* 解鎖 */
+  /* ── 解鎖邏輯 ── */
   document.getElementById('unlockBtn').addEventListener('click',()=>{
     document.getElementById('pwArea').style.display='flex';
     document.getElementById('pwInput').focus();
   });
-  function tryUnlock(){
-    const v=document.getElementById('pwInput').value;
-    if(v===P1||v===P2){document.getElementById('lockOverlay').style.display='none';updateAll();}
-    else{document.getElementById('pwErr').textContent='❌ 密碼錯誤';document.getElementById('pwInput').value='';}
-  }
-  document.getElementById('pwOkBtn').addEventListener('click',tryUnlock);
-  document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock();});
 
-  /* 確認清空 */
+  function tryUnlock(){
+    const v = document.getElementById('pwInput').value.trim();
+    const err = document.getElementById('pwErr');
+
+    // 永久密碼
+    if(v === P1 || v === P2){
+      document.getElementById('lockOverlay').style.display='none';
+      loadAll(); updateAll();
+      return;
+    }
+
+    // 限時密碼
+    if(v === P3){
+      if(isTempBlocked()){
+        err.textContent='🚫 此裝置已被鎖定，無法使用此密碼。';
+        document.getElementById('pwInput').value='';
+        return;
+      }
+      // 設定到期時間
+      const exp = Date.now() + TEMP_DURATION;
+      localStorage.setItem(TEMP_KEY, String(exp));
+      document.getElementById('lockOverlay').style.display='none';
+      loadAll(); updateAll();
+      startTimer();
+      return;
+    }
+
+    err.textContent='❌ 密碼錯誤，請再試一次';
+    document.getElementById('pwInput').value='';
+  }
+
+  document.getElementById('pwOkBtn').addEventListener('click', tryUnlock);
+  document.getElementById('pwInput').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+
+  /* ── 確認清空 ── */
   document.getElementById('confirmNo').addEventListener('click',()=>{
     document.getElementById('confirmOverlay').style.display='none';
   });
@@ -418,12 +543,24 @@ document.addEventListener('DOMContentLoaded',function(){
     saveH();saveW();saveP();updateAll();
   });
 
-  /* 開牌 */
+  /* ── 開牌 ── */
   document.getElementById('btnB').addEventListener('click',()=>addHand('B'));
   document.getElementById('btnP').addEventListener('click',()=>addHand('P'));
   document.getElementById('btnT').addEventListener('click',()=>addHand('T'));
-  document.getElementById('btnUndo').addEventListener('click',undoLast);
-  document.getElementById('btnClear').addEventListener('click',clearAll);
+  document.getElementById('btnUndo').addEventListener('click', undoLast);
+  document.getElementById('btnClear').addEventListener('click', clearAll);
+
+  /* ── 開機時檢查限時密碼狀態 ── */
+  if(isTempActive()){
+    // 還在有效期內，自動解鎖並繼續倒數
+    document.getElementById('lockOverlay').style.display='none';
+    loadAll(); updateAll();
+    startTimer();
+  } else if(getTempExpiry() && !isTempBlocked()){
+    // 到期但還沒被標記鎖定（例如關機後超時）
+    localStorage.setItem(TEMP_LOCK_KEY,'1');
+    localStorage.removeItem(TEMP_KEY);
+  }
 
   loadAll();
 });
