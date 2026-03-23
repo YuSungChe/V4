@@ -17,13 +17,10 @@
     --text:#dde4f0; --muted:#5a6a85; --r:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
-    font-family:-apple-system,'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;font-size:14px;
-    -webkit-text-size-adjust:100%;text-size-adjust:100%;}
-
-#app{display:flex;flex-direction:column;height:100vh;height:100dvh;
-padding-top:env(safe-area-inset-top);
-padding-bottom:env(safe-area-inset-bottom);}
+  html{width:100%;height:100%;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;font-size:14px;}
+  #app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;}
 
 /* 頂部 */
 #topbar{flex:0 0 auto;background:linear-gradient(90deg,#0d1526,#16243e,#0d1526);
@@ -257,6 +254,15 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
 </div>
 
 <script>
+/* ── iOS 真實視窗高度修正 ──
+   解決 Safari/Publish/WebView 環境下 100vh 抓不準的問題 */
+function fixVH(){
+  document.getElementById('app').style.height = window.innerHeight + 'px';
+}
+fixVH();
+window.addEventListener('resize', fixVH);
+window.addEventListener('orientationchange', function(){ setTimeout(fixVH, 300); });
+
 /* ═══════════════════════════════════════════════════
    Service Worker 內嵌（Blob URL 方式）
    — 支援 HTTPS 環境（GitHub Pages）離線快取
