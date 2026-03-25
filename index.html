@@ -19,19 +19,20 @@
   *{box-sizing:border-box;margin:0;padding:0;
     -webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;}
 
+/* 所有東西都用 position:absolute 鋪滿，完全不依賴 height 繼承 */
 html,body{
 width:100%;height:100%;
-background:var(–bg);color:var(–text);
-overflow:hidden;
-font-family:-apple-system,‘Helvetica Neue’,‘PingFang TC’,‘Microsoft JhengHei’,sans-serif;
-font-size:14px;
+background:var(–bg);overflow:hidden;
 }
 
-/* 核心：用 100% 撐滿 body，body 的高度由瀏覽器決定 */
+/* 主容器：絕對定位撐滿整個視窗 */
 #app{
-width:100%;height:100%;
+position:absolute;
+top:0;left:0;right:0;bottom:0;
 display:flex;flex-direction:column;
-overflow:hidden;background:var(–bg);
+background:var(–bg);color:var(–text);
+font-family:-apple-system,‘Helvetica Neue’,‘PingFang TC’,‘Microsoft JhengHei’,sans-serif;
+font-size:14px;overflow:hidden;
 }
 
 /* 頂部 */
@@ -54,7 +55,7 @@ font-size:.6rem;color:var(–gold);white-space:nowrap;}
 display:flex;flex-direction:column;padding:6px 8px;gap:6px;}
 #row1{display:flex;gap:6px;flex:0 0 auto;}
 
-/* 左欄 — 比例跟截圖一致 */
+/* 左欄 */
 #colLeft{display:flex;flex-direction:column;gap:6px;flex:0 0 auto;width:110px;}
 .bet-btn{border:none;border-radius:10px;font-size:1.15rem;font-weight:900;
 letter-spacing:2px;cursor:pointer;padding:12px 0;
@@ -130,13 +131,14 @@ display:flex;align-items:center;justify-content:center;}
 .hy{background:rgba(34,197,94,.18);color:#4ade80;}
 .hn{background:rgba(239,68,68,.14);color:#f87171;}
 
-/* 疊層 */
-#lockOverlay,#confirmOverlay{
-position:fixed;top:0;left:0;right:0;bottom:0;
-display:none;align-items:center;justify-content:center;padding:24px;
+/* 解鎖疊層：絕對定位，蓋住一切 */
+#lockOverlay{
+position:absolute;top:0;left:0;right:0;bottom:0;
+background:var(–bg);z-index:8000;
+display:none;
+flex-direction:column;align-items:center;justify-content:center;
+gap:14px;text-align:center;padding:24px;
 }
-#lockOverlay{background:var(–bg);z-index:8000;flex-direction:column;gap:14px;text-align:center;}
-#confirmOverlay{background:rgba(0,0,0,.82);z-index:9000;}
 .lk-icon{font-size:2.8rem;}
 #lockOverlay h2{font-size:1.25rem;color:var(–gold);font-weight:800;}
 #lockDesc{font-size:.82rem;color:var(–muted);}
@@ -152,6 +154,14 @@ border-radius:9px;color:white;font-size:1.15rem;text-align:center;letter-spacing
 border-radius:9px;font-size:.95rem;font-weight:700;cursor:pointer;}
 #pwOkBtn:active{opacity:.85;}
 #pwErr{color:#f87171;font-size:.82rem;min-height:1rem;text-align:center;}
+
+/* 確認清空疊層 */
+#confirmOverlay{
+position:absolute;top:0;left:0;right:0;bottom:0;
+background:rgba(0,0,0,.85);z-index:9000;
+display:none;
+align-items:center;justify-content:center;padding:24px;
+}
 #confirmBox{background:#1a2235;border:1px solid var(–border);border-radius:14px;
 padding:24px 20px;text-align:center;max-width:280px;width:100%;}
 #confirmBox h3{font-size:1rem;color:var(–gold);margin-bottom:8px;}
@@ -166,36 +176,39 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
 </head>
 <body>
 
-<!-- 解鎖疊層 -->
-
-<div id="lockOverlay" style="display:flex;">
-  <div class="lk-icon">🔐</div>
-  <h2>百家樂趨勢分析 V6</h2>
-  <p id="lockDesc">請輸入密碼以解鎖使用</p>
-  <button id="unlockBtn">🔓 輸入密碼解鎖</button>
-  <div id="pwArea">
-    <input id="pwInput" type="password" placeholder="輸入密碼" maxlength="20" autocomplete="off">
-    <button id="pwOkBtn">✅ 確認</button>
-    <div id="pwErr"></div>
-  </div>
-</div>
-
-<!-- 確認清空 -->
-
-<div id="confirmOverlay">
-  <div id="confirmBox">
-    <h3>⚠️ 確認清空</h3>
-    <p>將清空所有開牌歷史及 AI 學習紀錄，此操作無法復原。</p>
-    <div id="confirmBtns">
-      <button id="confirmNo">取消</button>
-      <button id="confirmYes">確定清空</button>
-    </div>
-  </div>
-</div>
-
-<!-- 主畫面 -->
+<!-- 主容器（所有東西都在這裡面）-->
 
 <div id="app">
+
+  <!-- 解鎖疊層（預設顯示）-->
+
+  <div id="lockOverlay" style="display:flex;">
+    <div class="lk-icon">🔐</div>
+    <h2>百家樂趨勢分析 V6</h2>
+    <p id="lockDesc">請輸入密碼以解鎖使用</p>
+    <button id="unlockBtn">🔓 輸入密碼解鎖</button>
+    <div id="pwArea">
+      <input id="pwInput" type="password" placeholder="輸入密碼" maxlength="20" autocomplete="off">
+      <button id="pwOkBtn">✅ 確認</button>
+      <div id="pwErr"></div>
+    </div>
+  </div>
+
+  <!-- 確認清空疊層 -->
+
+  <div id="confirmOverlay">
+    <div id="confirmBox">
+      <h3>⚠️ 確認清空</h3>
+      <p>將清空所有開牌歷史及 AI 學習紀錄，此操作無法復原。</p>
+      <div id="confirmBtns">
+        <button id="confirmNo">取消</button>
+        <button id="confirmYes">確定清空</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 頂部 -->
+
   <div id="topbar">
     <div>
       <div class="title">🎴 百家樂趨勢分析</div>
@@ -206,6 +219,9 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
       <div id="netBadge">● 載入中</div>
     </div>
   </div>
+
+  <!-- 主內容 -->
+
   <div id="main">
     <div id="row1">
       <div id="colLeft">
@@ -267,14 +283,14 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
       </div>
     </div>
   </div>
-</div>
+</div><!-- /app -->
 
 <script>
-/* ── Service Worker v8 ── */
+/* ── Service Worker v9 ── */
 (function(){
   if(!('serviceWorker' in navigator))return;
   navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));
-  const c=`const V='bac6-v8';self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll([location.href])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(location.href))));});`;
+  const c=`const V='bac6-v9';self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll([location.href])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(location.href))));});`;
   try{
     navigator.serviceWorker.register(URL.createObjectURL(new Blob([c],{type:'application/javascript'})))
       .then(()=>{const b=document.getElementById('netBadge');b.textContent='● 離線就緒';b.style.color='#4ade80';})
@@ -284,23 +300,16 @@ border-radius:8px;padding:11px;font-size:.85rem;font-weight:700;cursor:pointer;}
   window.addEventListener('online', ()=>{document.getElementById('netBadge').textContent='● 已連線';});
 })();
 
-/* ══════════════════════════════════════════
-   密碼 & 限時邏輯
-   P1/P2 = 永久密碼
-   P3    = 12341234，限時 15 分鐘，用過即鎖
-   P4    = 43214321，限時 24 小時，用過即鎖
-══════════════════════════════════════════ */
+/* ── 密碼設定 ── */
 const P1='17881788', P2='59875987';
-const P3='12341234', P3_MS=15*60*1000,    P3_KEY='b6_t3exp', P3_USED='b6_t3used';
-const P4='43214321', P4_MS=24*60*60*1000, P4_KEY='b6_t4exp', P4_USED='b6_t4used';
+const P3='12341234', P3_MS=15*60*1000,    P3_EK='b6_t3exp', P3_UK='b6_t3used';
+const P4='43214321', P4_MS=24*60*60*1000, P4_EK='b6_t4exp', P4_UK='b6_t4used';
 
 let timerIv=null;
+function getExp(k){const v=localStorage.getItem(k);return v?parseInt(v):null;}
+function isAlive(k){const e=getExp(k);return !!e&&Date.now()<e;}
+function isUsed(k){return localStorage.getItem(k)==='1';}
 
-function getExp(key){const v=localStorage.getItem(key);return v?parseInt(v):null;}
-function isAlive(key){const e=getExp(key);return !!e&&Date.now()<e;}
-function isUsed(key){return localStorage.getItem(key)==='1';}
-
-/* 啟動倒數（支援不同時長） */
 function startTimer(expKey){
   const bar=document.getElementById('timerBar'),txt=document.getElementById('timerTxt');
   bar.style.display='flex';
@@ -312,15 +321,15 @@ function startTimer(expKey){
     const h=Math.floor(left/3600000);
     const m=Math.floor((left%3600000)/60000);
     const s=Math.floor((left%60000)/1000);
-    // 超過1小時顯示 hh:mm，否則顯示 mm:ss
-    txt.textContent = h>0
-      ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
-      : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    bar.className = left<=60000 ? 'danger' : left<=300000 ? 'warn' : '';
+    txt.textContent=h>0
+      ?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+      :`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    bar.className=left<=60000?'danger':left<=300000?'warn':'';
     if(left<=0){
       clearInterval(timerIv);bar.style.display='none';
       localStorage.removeItem(expKey);
-      document.getElementById('lockOverlay').style.display='flex';
+      const ol=document.getElementById('lockOverlay');
+      ol.style.display='flex';
       document.getElementById('pwArea').style.display='flex';
       document.getElementById('lockDesc').textContent='⏰ 限時使用已到期';
       document.getElementById('pwErr').textContent='請輸入正式密碼繼續使用';
@@ -441,8 +450,6 @@ function doUnlock(){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-
-  /* 解鎖按鈕 */
   document.getElementById('unlockBtn').addEventListener('click',()=>{
     document.getElementById('pwArea').style.display='flex';
     setTimeout(()=>document.getElementById('pwInput').focus(),100);
@@ -451,58 +458,45 @@ document.addEventListener('DOMContentLoaded',function(){
   function tryUnlock(){
     const v=document.getElementById('pwInput').value.trim();
     const err=document.getElementById('pwErr');
-
-    /* 永久密碼 */
     if(v===P1||v===P2){
       if(timerIv)clearInterval(timerIv);
-      localStorage.removeItem(P3_KEY);localStorage.removeItem(P4_KEY);
+      localStorage.removeItem(P3_EK);localStorage.removeItem(P4_EK);
       document.getElementById('timerBar').style.display='none';
       doUnlock();return;
     }
-
-    /* P3：15分鐘限時 */
     if(v===P3){
-      if(isUsed(P3_USED)){err.textContent='🚫 此密碼已使用過，請輸入其他密碼。';document.getElementById('pwInput').value='';return;}
-      localStorage.setItem(P3_USED,'1');
-      localStorage.setItem(P3_KEY,String(Date.now()+P3_MS));
-      doUnlock();startTimer(P3_KEY);return;
+      if(isUsed(P3_UK)){err.textContent='🚫 此密碼已使用過，請輸入其他密碼。';document.getElementById('pwInput').value='';return;}
+      localStorage.setItem(P3_UK,'1');localStorage.setItem(P3_EK,String(Date.now()+P3_MS));
+      doUnlock();startTimer(P3_EK);return;
     }
-
-    /* P4：24小時限時 */
     if(v===P4){
-      if(isUsed(P4_USED)){err.textContent='🚫 此密碼已使用過，請輸入其他密碼。';document.getElementById('pwInput').value='';return;}
-      localStorage.setItem(P4_USED,'1');
-      localStorage.setItem(P4_KEY,String(Date.now()+P4_MS));
-      doUnlock();startTimer(P4_KEY);return;
+      if(isUsed(P4_UK)){err.textContent='🚫 此密碼已使用過，請輸入其他密碼。';document.getElementById('pwInput').value='';return;}
+      localStorage.setItem(P4_UK,'1');localStorage.setItem(P4_EK,String(Date.now()+P4_MS));
+      doUnlock();startTimer(P4_EK);return;
     }
-
     err.textContent='❌ 密碼錯誤，請再試一次';
     document.getElementById('pwInput').value='';
   }
 
   document.getElementById('pwOkBtn').addEventListener('click',tryUnlock);
   document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock();});
-
-  /* 確認清空 */
   document.getElementById('confirmNo').addEventListener('click',()=>{document.getElementById('confirmOverlay').style.display='none';});
   document.getElementById('confirmYes').addEventListener('click',()=>{
     document.getElementById('confirmOverlay').style.display='none';
     history=[];predLog=[];W={_a:1,_b:1,_c:1,_d:1,_e:1,_f:1,_g:1};
     saveH();saveW();saveP();updateAll();
   });
-
-  /* 開牌 */
   document.getElementById('btnB').addEventListener('click',()=>addHand('B'));
   document.getElementById('btnP').addEventListener('click',()=>addHand('P'));
   document.getElementById('btnT').addEventListener('click',()=>addHand('T'));
   document.getElementById('btnUndo').addEventListener('click',undoLast);
   document.getElementById('btnClear').addEventListener('click',clearAll);
 
-  /* 開機恢復限時狀態 */
-  if(isAlive(P3_KEY)){doUnlock();startTimer(P3_KEY);}
-  else if(isAlive(P4_KEY)){doUnlock();startTimer(P4_KEY);}
-  else if(getExp(P3_KEY)){localStorage.removeItem(P3_KEY);document.getElementById('pwArea').style.display='flex';document.getElementById('lockDesc').textContent='⏰ 限時使用已到期';document.getElementById('pwErr').textContent='請輸入正式密碼繼續使用';}
-  else if(getExp(P4_KEY)){localStorage.removeItem(P4_KEY);document.getElementById('pwArea').style.display='flex';document.getElementById('lockDesc').textContent='⏰ 限時使用已到期';document.getElementById('pwErr').textContent='請輸入正式密碼繼續使用';}
+  /* 開機恢復限時 */
+  if(isAlive(P3_EK)){doUnlock();startTimer(P3_EK);}
+  else if(isAlive(P4_EK)){doUnlock();startTimer(P4_EK);}
+  else if(getExp(P3_EK)){localStorage.removeItem(P3_EK);document.getElementById('pwArea').style.display='flex';document.getElementById('lockDesc').textContent='⏰ 限時使用已到期';document.getElementById('pwErr').textContent='請輸入正式密碼繼續使用';}
+  else if(getExp(P4_EK)){localStorage.removeItem(P4_EK);document.getElementById('pwArea').style.display='flex';document.getElementById('lockDesc').textContent='⏰ 限時使用已到期';document.getElementById('pwErr').textContent='請輸入正式密碼繼續使用';}
 
   loadAll();
 });
